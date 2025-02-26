@@ -1,10 +1,10 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/src/presentation/components/ui/button"
+import { Input } from "@/src/presentation/components/ui/input"
+import { Textarea } from "@/src/presentation/components/ui/textarea"
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/presentation/components/ui/card"
 
 export default function ContactForm() {
   return (

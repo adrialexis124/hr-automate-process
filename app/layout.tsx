@@ -2,8 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import Sidebar from "@/components/Sidebar"
-import { ThemeProvider } from "@/components/theme-provider"
+import Sidebar from "@/src/presentation/components/Sidebar"
+import { ThemeProvider } from "@/src/presentation/components/theme-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 

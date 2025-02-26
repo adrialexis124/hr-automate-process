@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/src/presentation/components/ui/card"
 
 const steps = [
   { title: "Requisición del Personal", icon: "📋" },

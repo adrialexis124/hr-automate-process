@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/src/presentation/components/ui/button"
+import { Card, CardContent } from "@/src/presentation/components/ui/card"
 import { Info, Loader } from "lucide-react"
 import SaveButton from "./save-button"
 

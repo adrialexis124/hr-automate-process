@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { motion, useScroll, useMotionValueEvent } from "framer-motion"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/src/presentation/components/ui/button"
 import { Menu } from "lucide-react"
 
 const Navbar = () => {

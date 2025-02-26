@@ -1,8 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/src/presentation/components/ui/card"
+import { Button } from "@/src/presentation/components/ui/button"
 
 const jobs = [
   { title: "Desarrollador Frontend", category: "Tecnología", salary: "$50,000 - $70,000" },
