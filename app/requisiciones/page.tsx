@@ -29,7 +29,7 @@ export default function Requisiciones() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Nueva Requisición</CardTitle>
+          <CardTitle>Nueva Requisición AAA</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="space-y-4">
