@@ -7,7 +7,7 @@ import { motion } from "framer-motion"
 import { Home, Users, FileText, CheckSquare, MessageSquare, Settings, Menu, X } from "lucide-react"
 
 // Simulación del rol del usuario (reemplázalo con tu lógica real)
-const userRole = "recursoshumanos" // Cambia esto dinámicamente según el usuario
+const userRole = "admin" // Cambia esto dinámicamente según el usuario
 
 const menuItems = [
   { icon: Home, name: "Dashboard", href: "/" },
