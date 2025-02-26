@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { Home, Users, FileText, CheckSquare, MessageSquare, Settings, Menu, X } from "lucide-react"
+import { useAuthenticator } from "@aws-amplify/ui-react";
 
 // Simulación del rol del usuario (reemplázalo con tu lógica real)
 const userRole = "admin" // Cambia esto dinámicamente según el usuario
@@ -18,10 +19,11 @@ const menuItems = [
   { icon: Settings, name: "Configuración", href: "/configuracion" },
 ]
 
+
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(true)
   const pathname = usePathname()
-
+  const { signOut } = useAuthenticator();
   return (
     <>
       <motion.div
@@ -59,6 +61,8 @@ const Sidebar = () => {
                 </motion.div>
               </Link>
             ))}
+            <br />
+            <button onClick={signOut}>Sign out</button>
         </nav>
       </motion.div>
     </>
