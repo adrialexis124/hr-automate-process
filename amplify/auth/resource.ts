@@ -16,8 +16,8 @@ export const auth = defineAuth({
     "custom:department": {
       dataType: "String",
       mutable: true,
-      maxLen: 1,
-      minLen: 20,
+      maxLen: 20,
+      minLen: 1,
     }
   },
 });
