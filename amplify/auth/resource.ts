@@ -9,10 +9,6 @@ export const auth = defineAuth({
     email: true,
   },
   userAttributes: {
-    fullname: {
-      mutable: true,
-      required: false
-    },
     "custom:department": {
       dataType: "String",
       mutable: true,
