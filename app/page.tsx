@@ -1,11 +1,36 @@
 "use client"
-
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/presentation/components/ui/card"
 import { Button } from "@/src/presentation/components/ui/button"
 import { Users, FileText, CheckSquare, MessageSquare, ArrowRight } from "lucide-react"
+import { fetchUserAttributes } from "@aws-amplify/auth";
 
 export default function Dashboard() {
+  const [user, setUser] = useState<{ givenName: string; department: string }>({
+    givenName: "",
+    department: "",
+  });
+
+  useEffect(() => {
+    async function fetchAttributes() {
+      try {
+        const attributes = await fetchUserAttributes();
+
+        console.log("Atributos del usuario:", attributes);
+
+        const givenName = attributes?.given_name || "Usuario";
+        const department = attributes?.["custom:department"] || "No asignado";
+
+        setUser({ givenName, department });
+      } catch (error) {
+        console.error("Error obteniendo los atributos del usuario:", error);
+      }
+    }
+
+    fetchAttributes();
+  }, []);
+
   const stats = [
     { title: "Requisiciones Activas", value: 12, icon: Users, color: "text-blue-500" },
     { title: "Candidatos en Proceso", value: 48, icon: FileText, color: "text-green-500" },
@@ -21,7 +46,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Bienvenido NOMBRE Departamento: 
+        Bienvenido {user.givenName} - Departamento: {user.department}
       </motion.h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
