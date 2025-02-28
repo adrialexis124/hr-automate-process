@@ -34,27 +34,27 @@ const Sidebar = () => {
   }, []);
 
   // 📌 Definir el tipo de `menuItems`
-  let menuItems: Array<{ icon: React.ElementType; name: string; href: string }> = [];
 
+  let menuItems: Array<{ icon: React.ElementType; name: string; href: string }> = [];
   if (userGroup === "solicitantes") {
     menuItems = [
       { icon: LayoutDashboard, name: "Dashboard", href: "/" },
-      { icon: FileText, name: "Requisiciones", href: "/requisiciones" },
-      { icon: ClipboardList, name: "Etapa 2", href: "/requisiciones" },
-      { icon: Layers, name: "Etapa 3", href: "/requisiciones" },
+      { icon: FileText, name: "Requisiciones", href: "/solicitantes/requisiciones" },
+      { icon: ClipboardList, name: "En revisión", href: "/otromenu" },
+      { icon: ClipboardList, name: "Aprobación", href: "/otromenu2" },
+      { icon: Layers, name: "Historial", href: "/otromenu3" },
     ];
   } else if (userGroup === "rrhh") {
     menuItems = [
       { icon: LayoutDashboard, name: "Dashboard", href: "/" },
       { icon: Users, name: "Solicitudes", href: "/solicitudes" },
       { icon: FileText, name: "Publicación Oferta", href: "/publicacion" },
-      { icon: BarChart, name: "Generar Reporte", href: "/reporte" },
+      { icon: BarChart, name: "Candidatos", href: "/reporte" },
     ];
   } else if (userGroup === "psicologia") {
     menuItems = [
       { icon: LayoutDashboard, name: "Dashboard", href: "/" },
       { icon: ClipboardList, name: "Pruebas Psicotécnicas", href: "/pruebas" },
-      { icon: BarChart, name: "Reporte", href: "/reporte" },
     ];
   }
 

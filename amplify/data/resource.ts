@@ -17,7 +17,7 @@ const schema = a.schema({
       estado: a.string(),
       etapa: a.string(),
     })
-    .authorization((allow) => [allow.guest()]),
+    .authorization((allow) => [allow.publicApiKey()]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
