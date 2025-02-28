@@ -16,8 +16,22 @@ const schema = a.schema({
       salario: a.string(),
       estado: a.string(),
       etapa: a.string(),
+      postulantes: a.hasMany('Postulante', 'requisicionId'),
     })
     .authorization((allow) => [allow.publicApiKey()]),
+  Postulante: a
+    .model({
+      nombre: a.string(),
+      etapa: a.string(),
+      puntajeP1: a.string(),
+      puntajeP2: a.string(),
+      puntajeP3: a.string(),
+      puntajeP4: a.string(),
+      requisicionId: a.id(),
+      requisicion: a.belongsTo('Requisicion', 'requisicionId'),
+    })
+    .authorization((allow) => [allow.publicApiKey()])
+
 });
 
 export type Schema = ClientSchema<typeof schema>;

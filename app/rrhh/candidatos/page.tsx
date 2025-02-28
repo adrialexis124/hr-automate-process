@@ -20,12 +20,12 @@ export default function Requisiciones() {
   const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
 
   const [cargo, setCargo] = useState("");
-  const [jefeInmediato, setJefeInmediato] = useState("Adrian Bravo");
+  const [jefeInmediato, setJefeInmediato] = useState("A");
   const [area, setArea] = useState("TICS");
   const [funciones, setFunciones] = useState("");
   const [salario, setSalario] = useState("");
   const [estado, setEstado] = useState("Pendiente");
-  const [etapa, setEtapa] = useState("En Revisión 1");
+  const [etapa, setEtapa] = useState("En Revisión");
 
   function listRequisiciones() {
     client.models.Requisicion.observeQuery().subscribe({
@@ -72,6 +72,26 @@ export default function Requisiciones() {
     }
   };
 
+  const updateEtapa = async (id: string, nuevoEtapa: string) => {
+    try {
+      const updatedRequisicion = await client.models.Requisicion.update({
+        id,
+        etapa: nuevoEtapa
+      });
+  
+      // Actualiza el estado local para reflejar el cambio en la UI
+      setRequisiciones((prev) =>
+        prev.map((req) =>
+          req.id === id ? { ...req, estado: nuevoEtapa } : req
+        )
+      );
+  
+      console.log("Estado actualizado:", updatedRequisicion);
+    } catch (error) {
+      console.error("Error al actualizar estado:", error);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <motion.h1
@@ -83,49 +103,7 @@ export default function Requisiciones() {
         Gestión de Requisiciones
       </motion.h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Nueva Requisición</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={createRequisicion}>
-              <div className="space-y-2">
-                <Label htmlFor="cargo">Cargo</Label>
-                <Input 
-                  id="cargo" 
-                  placeholder="Nombre del cargo" 
-                  value={cargo}
-                  onChange={(e)=>setCargo(e.target.value)}
-                />
-              </div>
-            <div className="space-y-2">
-              <Label htmlFor="funciones">Funciones del cargo</Label>
-              <Textarea 
-                id="funciones" 
-                placeholder="Detalle las funciones principales" 
-                value={funciones}
-                onChange={(e) => setFunciones(e.target.value)}
-              />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="salario">Salario</Label>
-              <Select onValueChange={(value) => setSalario(value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione un rango salarial" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="500-1000">500-1000</SelectItem>
-                  <SelectItem value="1000-1500">1000-1500</SelectItem>
-                  <SelectItem value="1500-2000">1500-2000</SelectItem>
-                </SelectContent>
-                </Select>
-            </div>
-
-            <Button type="submit">Enviar Requisición</Button>
-          </form>
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -137,6 +115,7 @@ export default function Requisiciones() {
               <thead>
                 <tr className="border-b">
                   <th className="text-left p-2">ID</th>
+                  <th className="text-left p-2">Jefe Inmediato</th>
                   <th className="text-left p-2">Cargo</th>
                   <th className="text-left p-2">Área</th>
                   <th className="text-left p-2">Etapa</th>
@@ -146,22 +125,27 @@ export default function Requisiciones() {
                 </tr>
               </thead>
               <tbody>
-                {requisiciones.map((requisiciones) => (
-                  <tr key={requisiciones.id} className="border-b">
-                    <td className="p-2">{requisiciones.id}</td>
-                    <td className="p-2">{requisiciones.cargo}</td>
-                    <td className="p-2">{requisiciones.area}</td>
-                    <td className="p-2">{requisiciones.etapa}</td>
-                    <td className="p-2">{requisiciones.funciones}</td>
-                    <td className="p-2">{requisiciones.estado}</td>
-                    <td className="p-2">
-                      <Button variant="outline" size="sm">
-                        Ver detalles
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+                {requisiciones
+                    .filter((requisicion) => requisicion.etapa === "Publicado") // Filtra solo las requisiciones en revisión
+                    .map((requisicion) => (
+                      <tr key={requisicion.id} className="border-b">
+                      <td className="p-2">{requisicion.id}</td>
+                      <td className="p-2">{requisicion.jefeInmediato}</td>
+                      <td className="p-2">{requisicion.cargo}</td>
+                      <td className="p-2">{requisicion.area}</td>
+                      <td className="p-2">{requisicion.etapa}</td>
+                      <td className="p-2">{requisicion.funciones}</td>
+                      <td className="p-2">{requisicion.estado}</td>
+                      <td className="p-2">
+                      <td className="p-2">
+                          <Button variant="outline" size="sm" >
+                              Crear Candidato
+                          </Button>
+                      </td>
+                      </td>
+                    </tr>
+                    ))}
+                </tbody>
             </table>
           </div>
         </CardContent>

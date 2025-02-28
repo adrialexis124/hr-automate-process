@@ -40,16 +40,15 @@ const Sidebar = () => {
     menuItems = [
       { icon: LayoutDashboard, name: "Dashboard", href: "/" },
       { icon: FileText, name: "Requisiciones", href: "/solicitantes/requisiciones" },
-      { icon: ClipboardList, name: "En revisión", href: "/otromenu" },
-      { icon: ClipboardList, name: "Aprobación", href: "/otromenu2" },
-      { icon: Layers, name: "Historial", href: "/otromenu3" },
+      { icon: ClipboardList, name: "Aprobación Personal", href: "/solicitantes/aprobacion" },
+      { icon: Layers, name: "Historial", href: "/solicitantes/historial" },
     ];
   } else if (userGroup === "rrhh") {
     menuItems = [
       { icon: LayoutDashboard, name: "Dashboard", href: "/" },
-      { icon: Users, name: "Solicitudes", href: "/solicitudes" },
-      { icon: FileText, name: "Publicación Oferta", href: "/publicacion" },
-      { icon: BarChart, name: "Candidatos", href: "/reporte" },
+      { icon: Users, name: "Revisión Solicitudes", href: "/rrhh/solicitudes" },
+      { icon: FileText, name: "Publicación Oferta", href: "/rrhh/publicacion" },
+      { icon: FileText, name: "Candidatos", href: "/rrhh/candidatos" },
     ];
   } else if (userGroup === "psicologia") {
     menuItems = [
