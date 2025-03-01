@@ -16,6 +16,7 @@ const schema = a.schema({
       salario: a.string(),
       estado: a.string(),
       etapa: a.string(),
+      detalle: a.string(),
       postulantes: a.hasMany('Postulante', 'requisicionId'),
     })
     .authorization((allow) => [allow.publicApiKey()]),

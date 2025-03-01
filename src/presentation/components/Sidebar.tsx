@@ -38,22 +38,25 @@ const Sidebar = () => {
   let menuItems: Array<{ icon: React.ElementType; name: string; href: string }> = [];
   if (userGroup === "solicitantes") {
     menuItems = [
-      { icon: LayoutDashboard, name: "Dashboard", href: "/" },
+      { icon: LayoutDashboard, name: "Inicio", href: "/" },
       { icon: FileText, name: "Requisiciones", href: "/solicitantes/requisiciones" },
       { icon: ClipboardList, name: "Aprobación Personal", href: "/solicitantes/aprobacion" },
       { icon: Layers, name: "Historial", href: "/solicitantes/historial" },
     ];
   } else if (userGroup === "rrhh") {
     menuItems = [
-      { icon: LayoutDashboard, name: "Dashboard", href: "/" },
+      { icon: LayoutDashboard, name: "Inicio", href: "/" },
       { icon: Users, name: "Revisión Solicitudes", href: "/rrhh/solicitudes" },
       { icon: FileText, name: "Publicación Oferta", href: "/rrhh/publicacion" },
       { icon: FileText, name: "Candidatos", href: "/rrhh/candidatos" },
     ];
-  } else if (userGroup === "psicologia") {
+  } else if (userGroup === "calificadores") {
     menuItems = [
-      { icon: LayoutDashboard, name: "Dashboard", href: "/" },
-      { icon: ClipboardList, name: "Pruebas Psicotécnicas", href: "/pruebas" },
+      { icon: LayoutDashboard, name: "Inicio", href: "/" },
+      { icon: ClipboardList, name: "Pruebas Psicotécnicas", href: "/calificacion/psicotecnica" },
+      { icon: ClipboardList, name: "Prueba Técnica", href: "/calificacion/tecnica" },
+      { icon: ClipboardList, name: "Talento Humano", href: "/calificacion/thumano" },
+      { icon: ClipboardList, name: "Jefe Inmediato", href: "/calificacion/jefe" },
     ];
   }
 

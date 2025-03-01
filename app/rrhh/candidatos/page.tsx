@@ -18,14 +18,15 @@ const client = generateClient<Schema>();
 
 export default function Requisiciones() {
   const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
+  const [postulantes, setPostulantes] = useState<Array<Schema["Postulante"]["type"]>>([]);
 
-  const [cargo, setCargo] = useState("");
-  const [jefeInmediato, setJefeInmediato] = useState("A");
-  const [area, setArea] = useState("TICS");
-  const [funciones, setFunciones] = useState("");
-  const [salario, setSalario] = useState("");
-  const [estado, setEstado] = useState("Pendiente");
+  const [nombre, setNombre] = useState("");
   const [etapa, setEtapa] = useState("En Revisión");
+  const [puntajeP1, setPuntajeP1] = useState("Pendiente");
+  const [puntajeP2, setPuntajeP2] = useState("Pendiente");
+  const [puntajeP3, setPuntajeP3] = useState("Pendiente");
+  const [puntajeP4, setPuntajeP4] = useState("Pendiente");
+
 
   function listRequisiciones() {
     client.models.Requisicion.observeQuery().subscribe({
@@ -42,30 +43,35 @@ export default function Requisiciones() {
     listRequisiciones();
   }, []);
 
-  const createRequisicion = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evitar recarga de la página
+  function listPostulantes() {
+    client.models.Postulante.observeQuery().subscribe({
+      next: (data) => {
+        const sortedRecords = data.items.sort((a, b) => {
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+        setPostulantes(sortedRecords);
+      },
+    });
+  }
+
+  useEffect(() => {
+    listPostulantes();
+  }, []);
+
+  const createPostulante = async (requisicionId: string) => {
   
     try {
-      const newRequisicion = await client.models.Requisicion.create({
-        cargo,
-        jefeInmediato,
-        area,
-        funciones,
-        salario,
-        estado,
-        etapa
+      const newPostulante = await client.models.Postulante.create({
+        requisicionId,
+        nombre: window.prompt("Nombre postulante"),
+        etapa,
+        puntajeP1,
+        puntajeP2,
+        puntajeP3,
+        puntajeP4,
       });
   
-      console.log("Requisición creada:", newRequisicion);
-  
-      // Limpiar el formulario después de enviar
-      setCargo("");
-      setJefeInmediato("");
-      setArea("");
-      setFunciones("");
-      setSalario("");
-      setEstado("");
-      setEtapa("");
+      console.log("Postulante creada:", newPostulante);
   
     } catch (error) {
       console.error("Error al guardar la requisición:", error);
@@ -100,10 +106,8 @@ export default function Requisiciones() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Gestión de Requisiciones
+        Creación de Candidatos
       </motion.h1>
-
-
 
       <Card>
         <CardHeader>
@@ -138,11 +142,56 @@ export default function Requisiciones() {
                       <td className="p-2">{requisicion.estado}</td>
                       <td className="p-2">
                       <td className="p-2">
-                          <Button variant="outline" size="sm" >
-                              Crear Candidato
-                          </Button>
+                      <td className="p-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => createPostulante(requisicion.id)}
+                        >
+                            Crear Candidato
+                        </Button>
+                        </td>
                       </td>
                       </td>
+                    </tr>
+                    ))}
+                </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Candidatos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b">
+                  <th className="text-left p-2">ID</th>
+                  <th className="text-left p-2">RequisicionID</th>
+                  <th className="text-left p-2">Nombre</th>
+                  <th className="text-left p-2">Prueba Psicotécnia</th>
+                  <th className="text-left p-2">Prueba Técnica</th>
+                  <th className="text-left p-2">Nota Talento Humano</th>
+                  <th className="text-left p-2">Nota Jefe Inmediato</th>
+                  <th className="text-left p-2">Etapa</th>
+                </tr>
+              </thead>
+              <tbody>
+                {postulantes
+                    .filter((postulante) => postulante.etapa !== "Publicado") // Filtra solo las requisiciones en revisión
+                    .map((postulante) => (
+                      <tr key={postulante.id} className="border-b">
+                      <td className="p-2">{postulante.id}</td>
+                      <td className="p-2">{postulante.requisicionId}</td>
+                      <td className="p-2">{postulante.nombre}</td>
+                      <td className="p-2">{postulante.puntajeP1}</td>
+                      <td className="p-2">{postulante.puntajeP2}</td>
+                      <td className="p-2">{postulante.puntajeP3}</td>
+                      <td className="p-2">{postulante.puntajeP4}</td>
+                      <td className="p-2">{postulante.etapa}</td>
                     </tr>
                     ))}
                 </tbody>

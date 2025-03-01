@@ -100,10 +100,8 @@ export default function Requisiciones() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Gestión de Requisiciones
+        Publicación Ofertas Laborales
       </motion.h1>
-
-
 
       <Card>
         <CardHeader>
@@ -137,24 +135,29 @@ export default function Requisiciones() {
                       <td className="p-2">{requisicion.etapa}</td>
                       <td className="p-2">{requisicion.funciones}</td>
                       <td className="p-2">
-                        <Select onValueChange={(value) => console.log("Portal seleccionado:", value)}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Intranet">Intranet</SelectItem>
-                            <SelectItem value="Externo">Externo</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-2">{requisicion.estado}</td>
-                      <td className="p-2">
-                      <td className="p-2">
-                          <Button variant="outline" size="sm" onClick={() => updateEtapa(requisicion.id, "Publicado")}>
-                              Publicar
-                          </Button>
-                      </td>
-                      </td>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4"
+                            />
+                            Intranet
+                          </label>
+                          <label className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4"
+                            />
+                            Externo
+                          </label>
+                        </td>
+                        <td className="p-2">{requisicion.estado}</td>
+                        <td className="p-2">
+                        <td className="p-2">
+                            <Button variant="outline" size="sm" onClick={() => updateEtapa(requisicion.id, "Publicado")}>
+                                Publicar
+                            </Button>
+                        </td>
+                        </td>
                     </tr>
                     ))}
                 </tbody>

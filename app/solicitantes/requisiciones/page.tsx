@@ -20,8 +20,8 @@ export default function Requisiciones() {
   const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
 
   const [cargo, setCargo] = useState("");
-  const [jefeInmediato, setJefeInmediato] = useState("Adrian Bravo");
-  const [area, setArea] = useState("TICS");
+  const [jefeInmediato, setJefeInmediato] = useState("");
+  const [area, setArea] = useState("");
   const [funciones, setFunciones] = useState("");
   const [salario, setSalario] = useState("");
   const [estado, setEstado] = useState("Pendiente");
@@ -89,6 +89,8 @@ export default function Requisiciones() {
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={createRequisicion}>
+          <div className="grid grid-cols-2 gap-4">
+            
               <div className="space-y-2">
                 <Label htmlFor="cargo">Cargo</Label>
                 <Input 
@@ -98,6 +100,27 @@ export default function Requisiciones() {
                   onChange={(e)=>setCargo(e.target.value)}
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="cargo">Area</Label>
+                <Input 
+                  id="area" 
+                  placeholder="Nombre del area" 
+                  value={area}
+                  onChange={(e)=>setArea(e.target.value)}
+                />
+              </div>
+            </ div>
+
+            <div className="space-y-2">
+                <Label htmlFor="cargo">Jefe Inmediato</Label>
+                <Input 
+                  id="jefeInmediato" 
+                  placeholder="Nombre del Jefe Inmediato" 
+                  value={jefeInmediato}
+                  onChange={(e)=>setJefeInmediato(e.target.value)}
+                />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="funciones">Funciones del cargo</Label>
               <Textarea 
@@ -138,6 +161,7 @@ export default function Requisiciones() {
                 <tr className="border-b">
                   <th className="text-left p-2">ID</th>
                   <th className="text-left p-2">Cargo</th>
+                  <th className="text-left p-2">Jefe Inmediato</th>
                   <th className="text-left p-2">Área</th>
                   <th className="text-left p-2">Etapa</th>
                   <th className="text-left p-2">Funciones</th>
@@ -150,6 +174,7 @@ export default function Requisiciones() {
                   <tr key={requisiciones.id} className="border-b">
                     <td className="p-2">{requisiciones.id}</td>
                     <td className="p-2">{requisiciones.cargo}</td>
+                    <td className="p-2">{requisiciones.jefeInmediato}</td>
                     <td className="p-2">{requisiciones.area}</td>
                     <td className="p-2">{requisiciones.etapa}</td>
                     <td className="p-2">{requisiciones.funciones}</td>

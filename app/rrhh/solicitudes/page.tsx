@@ -104,7 +104,7 @@ export default function Requisiciones() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Gestión de Requisiciones
+        Revisión de Solicitudes
       </motion.h1>
 
 
