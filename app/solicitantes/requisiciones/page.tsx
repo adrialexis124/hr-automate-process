@@ -64,8 +64,8 @@ export default function Requisiciones() {
       setArea("");
       setFunciones("");
       setSalario("");
-      setEstado("");
-      setEtapa("");
+      setEstado("Pendiente");
+      setEtapa("En Revisión 1");
   
     } catch (error) {
       console.error("Error al guardar la requisición:", error);

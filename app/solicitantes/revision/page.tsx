@@ -72,28 +72,15 @@ export default function Requisiciones() {
     }
   };
 
-  const updateEstado = async (id: string, nuevoEstado: string) => {
+  const updateEstado = async (id: string) => {
     try {
-      const estadoToEtapa: Record<string, string> = {
-        Aprobado: "En Revisión 2",
-        Negado: "Finalizado",
-        Cambios: "Necesita Cambios",
-      };
-  
-      const nuevoEtapa = estadoToEtapa[nuevoEstado] || "Desconocido";
   
       const updatedRequisicion = await client.models.Requisicion.update({
         id,
-        estado: nuevoEstado,
-        etapa: nuevoEtapa,
+        estado: "Pendiente",
+        etapa: "En Revisión 1", // Actualiza también la etapa
       });
   
-      // Actualiza la UI con el nuevo estado y etapa
-      setRequisiciones((prev) =>
-        prev.map((req) =>
-          req.id === id ? { ...req, estado: nuevoEstado, etapa: nuevoEtapa } : req
-        )
-      );
   
       console.log("Estado y etapa actualizados:", updatedRequisicion);
     } catch (error) {
@@ -127,35 +114,29 @@ export default function Requisiciones() {
                   <th className="text-left p-2">Jefe Inmediato</th>
                   <th className="text-left p-2">Cargo</th>
                   <th className="text-left p-2">Área</th>
-                  <th className="text-left p-2">Etapa</th>
                   <th className="text-left p-2">Funciones</th>
+                  <th className="text-left p-2">Etapa</th>
                   <th className="text-left p-2">Estado</th>
                   <th className="text-left p-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {requisiciones
-                    .filter((requisicion) => requisicion.etapa === "En Revisión 1") // Filtra solo las requisiciones en revisión
+                    .filter((requisicion) => requisicion.etapa === "Necesita Cambios") // Filtra solo las requisiciones en revisión
                     .map((requisicion) => (
                     <tr key={requisicion.id} className="border-b">
                         <td className="p-2">{requisicion.id}</td>
                         <td className="p-2">{requisicion.jefeInmediato}</td>
                         <td className="p-2">{requisicion.cargo}</td>
                         <td className="p-2">{requisicion.area}</td>
-                        <td className="p-2">{requisicion.etapa}</td>
                         <td className="p-2">{requisicion.funciones}</td>
+                        <td className="p-2">{requisicion.etapa}</td>
                         <td className="p-2">{requisicion.estado}</td>
                         <td className="p-2">
-                        <Button variant="outline" size="sm" onClick={() => updateEstado(requisicion.id, "Aprobado")}>
-                            Aprobar
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => updateEstado(requisicion.id, "Cambios")}>
-                            Cambios
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => updateEstado(requisicion.id, "Negado")}>
-                            Negar
-                        </Button>
-                        </td>
+                        <Button 
+                            onClick={() => updateEstado(requisicion.id)}>
+                                Editar
+                        </Button></td>
                     </tr>
                     ))}
                 </tbody>

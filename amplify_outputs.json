@@ -95,6 +95,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "detalle": {
+              "name": "detalle",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "postulantes": {
               "name": "postulantes",
               "isArray": true,

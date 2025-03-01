@@ -40,6 +40,7 @@ const Sidebar = () => {
     menuItems = [
       { icon: LayoutDashboard, name: "Inicio", href: "/" },
       { icon: FileText, name: "Requisiciones", href: "/solicitantes/requisiciones" },
+      { icon: FileText, name: "Revision", href: "/solicitantes/revision" },
       { icon: ClipboardList, name: "Aprobación Personal", href: "/solicitantes/aprobacion" },
       { icon: Layers, name: "Historial", href: "/solicitantes/historial" },
     ];
@@ -53,10 +54,7 @@ const Sidebar = () => {
   } else if (userGroup === "calificadores") {
     menuItems = [
       { icon: LayoutDashboard, name: "Inicio", href: "/" },
-      { icon: ClipboardList, name: "Pruebas Psicotécnicas", href: "/calificacion/psicotecnica" },
-      { icon: ClipboardList, name: "Prueba Técnica", href: "/calificacion/tecnica" },
-      { icon: ClipboardList, name: "Talento Humano", href: "/calificacion/thumano" },
-      { icon: ClipboardList, name: "Jefe Inmediato", href: "/calificacion/jefe" },
+      { icon: ClipboardList, name: "Calificacion", href: "/calificacion" },
     ];
   }
 
