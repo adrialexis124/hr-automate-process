@@ -1,0 +1,8 @@
+{
+  "storage": {
+    "s3PostulanteStorage": {
+      "service": "S3",
+      "providerPlugin": "awscloudformation"
+    }
+  }
+} 

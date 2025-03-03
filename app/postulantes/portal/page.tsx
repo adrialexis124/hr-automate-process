@@ -9,15 +9,22 @@ import { Label } from "@/src/presentation/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/presentation/components/ui/dialog"
 import { Textarea } from "@/src/presentation/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/presentation/components/ui/select"
+import * as Auth from "aws-amplify/auth";
+import { fetchAuthSession } from "@aws-amplify/auth"; // Nueva forma de obtener usuario en Amplify v5+
 
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
+import { uploadData } from 'aws-amplify/storage';
+import { generateClient as apiClient } from 'aws-amplify/api';
+import { useAuthenticator } from "@aws-amplify/ui-react";
+
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
 export default function Requisiciones() {
+  const { user } = useAuthenticator();
   const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
   const [postulantes, setPostulantes] = useState<Array<Schema["Postulante"]["type"]>>([]);
 
@@ -30,12 +37,11 @@ export default function Requisiciones() {
 
   const [showPostularDialog, setShowPostularDialog] = useState(false);
   const [selectedRequisicionId, setSelectedRequisicionId] = useState<string | null>(null);
-  
+
   const [postulanteName, setPostulanteName] = useState("");
-  const [postulanteEmail, setPostulanteEmail] = useState("");
   const [postulanteTelefono, setPostulanteTelefono] = useState("");
   const [postulanteExperiencia, setPostulanteExperiencia] = useState("");
-  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [cvFile, setCvFile] = useState<string | null>(null);
 
   function listRequisiciones() {
     client.models.Requisicion.observeQuery().subscribe({
@@ -69,9 +75,40 @@ export default function Requisiciones() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setCvFile(e.target.files[0]);
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          setCvFile(e.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
+
+  const [userEmail, setUserEmail] = useState<string>("");
+
+  useEffect(() => {
+    async function getUserEmail() {
+      setUserEmail("");
+      try {
+        const { tokens } = await fetchAuthSession(); // Obtiene la sesión de autenticación
+        if (tokens?.idToken) {
+          const payloadBase64 = tokens.idToken.toString().split(".")[1]; // Extrae la parte del payload (JWT)
+          const decodedPayload = JSON.parse(atob(payloadBase64)); // Decodifica el JWT
+
+          console.log("Payload del token:", decodedPayload); // 👀 Verifica qué datos tiene el token
+
+          setUserEmail(decodedPayload.email);
+        }
+      } catch (error) {
+        console.error("Error obteniendo el email:", error);
+      }
+    }
+
+    getUserEmail();
+  }, []);
+
 
   const createPostulante = async (requisicionId: string) => {
     if (!cvFile) {
@@ -79,17 +116,20 @@ export default function Requisiciones() {
       return;
     }
 
-    try {
-      const cvUrl = "temp_url";
+    if (!user?.username) {
+      alert("Debe iniciar sesión para postular");
+      return;
+    }
 
+    try {
       const newPostulante = await client.models.Postulante.create({
         requisicionId,
         nombre: postulanteName,
-        email: postulanteEmail,
+        email: userEmail,
         telefono: postulanteTelefono,
         experiencia: postulanteExperiencia,
-        cvUrl,
-        etapa: "Postulado",
+        cvUrl: cvFile,
+        etapa: "En Revision",
         puntajeP1: "Pendiente",
         puntajeP2: "Pendiente",
         puntajeP3: "Pendiente",
@@ -107,7 +147,6 @@ export default function Requisiciones() {
 
   const limpiarFormulario = () => {
     setPostulanteName("");
-    setPostulanteEmail("");
     setPostulanteTelefono("");
     setPostulanteExperiencia("");
     setCvFile(null);
@@ -120,14 +159,14 @@ export default function Requisiciones() {
         id,
         etapa: nuevoEtapa
       });
-  
+
       // Actualiza el estado local para reflejar el cambio en la UI
       setRequisiciones((prev) =>
         prev.map((req) =>
           req.id === id ? { ...req, estado: nuevoEtapa } : req
         )
       );
-  
+
       console.log("Estado actualizado:", updatedRequisicion);
     } catch (error) {
       console.error("Error al actualizar estado:", error);
@@ -166,9 +205,9 @@ export default function Requisiciones() {
               </thead>
               <tbody>
                 {requisiciones
-                    .filter((requisicion) => requisicion.etapa === "Publicado") // Filtra solo las requisiciones en revisión
-                    .map((requisicion) => (
-                      <tr key={requisicion.id} className="border-b">
+                  .filter((requisicion) => requisicion.etapa === "Publicado") // Filtra solo las requisiciones en revisión
+                  .map((requisicion) => (
+                    <tr key={requisicion.id} className="border-b">
                       <td className="p-2">{requisicion.id}</td>
                       <td className="p-2">{requisicion.jefeInmediato}</td>
                       <td className="p-2">{requisicion.cargo}</td>
@@ -189,8 +228,8 @@ export default function Requisiciones() {
                         </Button>
                       </td>
                     </tr>
-                    ))}
-                </tbody>
+                  ))}
+              </tbody>
             </table>
           </div>
         </CardContent>
@@ -216,9 +255,9 @@ export default function Requisiciones() {
               </thead>
               <tbody>
                 {postulantes
-                    .filter((postulante) => postulante.etapa !== "Publicado") // Filtra solo las requisiciones en revisión
-                    .map((postulante) => (
-                      <tr key={postulante.id} className="border-b">
+                  .filter((postulante) => postulante.etapa !== "Publicado") // Filtra solo las requisiciones en revisión
+                  .map((postulante) => (
+                    <tr key={postulante.id} className="border-b">
                       <td className="p-2">{postulante.id}</td>
                       <td className="p-2">{postulante.requisicionId}</td>
                       <td className="p-2">{postulante.nombre}</td>
@@ -228,8 +267,8 @@ export default function Requisiciones() {
                       <td className="p-2">{postulante.puntajeP4}</td>
                       <td className="p-2">{postulante.etapa}</td>
                     </tr>
-                    ))}
-                </tbody>
+                  ))}
+              </tbody>
             </table>
           </div>
         </CardContent>
@@ -258,9 +297,9 @@ export default function Requisiciones() {
               <Input
                 id="email"
                 type="email"
-                value={postulanteEmail}
-                onChange={(e) => setPostulanteEmail(e.target.value)}
-                required
+                value={userEmail || ""}
+                disabled
+                className="bg-gray-100"
               />
             </div>
             <div>

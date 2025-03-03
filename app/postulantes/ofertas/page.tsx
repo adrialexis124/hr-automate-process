@@ -4,97 +4,101 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/src/presentation/components/ui/card"
 import { Button } from "@/src/presentation/components/ui/button"
-import { Input } from "@/src/presentation/components/ui/input"
-import { Label } from "@/src/presentation/components/ui/label"
-import { Textarea } from "@/src/presentation/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/presentation/components/ui/select"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/src/presentation/components/ui/dialog"
 
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
+import { useAuthenticator } from "@aws-amplify/ui-react";
+import { fetchAuthSession } from "aws-amplify/auth";
+
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
-export default function Requisiciones() {
-  const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
-  const [postulantes, setPostulantes] = useState<Array<Schema["Postulante"]["type"]>>([]);
 
-  const [nombre, setNombre] = useState("");
-  const [etapa, setEtapa] = useState("En Revisión");
-  const [puntajeP1, setPuntajeP1] = useState("Pendiente");
-  const [puntajeP2, setPuntajeP2] = useState("Pendiente");
-  const [puntajeP3, setPuntajeP3] = useState("Pendiente");
-  const [puntajeP4, setPuntajeP4] = useState("Pendiente");
+export default function MisOfertas() {
+  const { user } = useAuthenticator();
+  const [misPostulaciones, setMisPostulaciones] = useState<Array<Schema["Postulante"]["type"] & { cargo?: string, area?: string, funciones?: string }>>([]);
+  const [showDetalleDialog, setShowDetalleDialog] = useState(false);
+  const [selectedRequisicion, setSelectedRequisicion] = useState<Schema["Requisicion"]["type"] | null>(null);
 
-
-  function listRequisiciones() {
-    client.models.Requisicion.observeQuery().subscribe({
-      next: (data) => {
-        const sortedRecords = data.items.sort((a, b) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-        setRequisiciones(sortedRecords);
-      },
-    });
-  }
+  const [userEmail, setUserEmail] = useState<string>("");
 
   useEffect(() => {
-    listRequisiciones();
-  }, []);
+    async function getUserEmail() {
+      setUserEmail("");
+      try {
+        const { tokens } = await fetchAuthSession(); // Obtiene la sesión de autenticación
+        if (tokens?.idToken) {
+          const payloadBase64 = tokens.idToken.toString().split(".")[1]; // Extrae la parte del payload (JWT)
+          const decodedPayload = JSON.parse(atob(payloadBase64)); // Decodifica el JWT
 
-  function listPostulantes() {
-    client.models.Postulante.observeQuery().subscribe({
-      next: (data) => {
-        const sortedRecords = data.items.sort((a, b) => {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        });
-        setPostulantes(sortedRecords);
-      },
-    });
-  }
+          console.log("Payload del token:", decodedPayload); // 👀 Verifica qué datos tiene el token
 
-  useEffect(() => {
-    listPostulantes();
-  }, []);
-
-  const createPostulante = async (requisicionId: string) => {
-  
-    try {
-      const newPostulante = await client.models.Postulante.create({
-        requisicionId,
-        nombre: window.prompt("Nombre postulante"),
-        etapa,
-        puntajeP1,
-        puntajeP2,
-        puntajeP3,
-        puntajeP4,
-      });
-  
-      console.log("Postulante creada:", newPostulante);
-  
-    } catch (error) {
-      console.error("Error al guardar la requisición:", error);
+          setUserEmail(decodedPayload.email);
+        }
+      } catch (error) {
+        console.error("Error obteniendo el email:", error);
+      }
     }
-  };
 
-  const updateEtapa = async (id: string, nuevoEtapa: string) => {
+    getUserEmail();
+  }, []);
+
+
+  async function listMisPostulaciones() {
+    if (!user?.username) return;
+
     try {
-      const updatedRequisicion = await client.models.Requisicion.update({
-        id,
-        etapa: nuevoEtapa
+      // Obtener las postulaciones del usuario actual por su email y que estén aprobadas
+      const postulaciones = await client.models.Postulante.observeQuery({
+        filter: {
+          and: [
+            { etapa: { eq: "Aprobado" } }
+          ]
+        }
+      }).subscribe({
+        next: async (data) => {
+          // Para cada postulación, obtener los detalles de la requisición
+          const postulacionesConDetalles = await Promise.all(
+            data.items.map(async (postulacion) => {
+              if (!postulacion.requisicionId) return postulacion;
+              const requisicion = await client.models.Requisicion.get({ id: postulacion.requisicionId });
+              return {
+                ...postulacion,
+                cargo: requisicion?.data?.cargo || 'No especificado',
+                area: requisicion?.data?.area || 'No especificado',
+                funciones: requisicion?.data?.funciones || 'No especificado'
+              };
+            })
+          );
+
+          setMisPostulaciones(postulacionesConDetalles);
+          console.log(postulacionesConDetalles);
+        }
       });
-  
-      // Actualiza el estado local para reflejar el cambio en la UI
-      setRequisiciones((prev) =>
-        prev.map((req) =>
-          req.id === id ? { ...req, estado: nuevoEtapa } : req
-        )
-      );
-  
-      console.log("Estado actualizado:", updatedRequisicion);
     } catch (error) {
-      console.error("Error al actualizar estado:", error);
+      console.error("Error al obtener postulaciones:", error);
+    }
+  }
+
+  useEffect(() => {
+    if (user?.username) {
+      listMisPostulaciones();
+    }
+  }, [user]);
+
+  const verDetalles = async (requisicionId: string | null | undefined) => {
+    if (!requisicionId) return;
+    try {
+      const requisicion = await client.models.Requisicion.get({ id: requisicionId });
+      if (requisicion?.data) {
+        setSelectedRequisicion(requisicion.data);
+        setShowDetalleDialog(true);
+      }
+    } catch (error) {
+      console.error("Error al obtener detalles de la requisición:", error);
     }
   };
 
@@ -106,50 +110,80 @@ export default function Requisiciones() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Ofertas
+        Mis Postulaciones Aprobadas
       </motion.h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Candidatos</CardTitle>
+          <CardTitle>Estado de mis postulaciones aprobadas</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">ID</th>
-                  <th className="text-left p-2">RequisicionID</th>
-                  <th className="text-left p-2">Nombre</th>
-                  <th className="text-left p-2">Prueba Psicotécnia</th>
+                  <th className="text-left p-2">Cargo</th>
+                  <th className="text-left p-2">Área</th>
+                  <th className="text-left p-2">Estado</th>
+                  <th className="text-left p-2">Prueba Psicotécnica</th>
                   <th className="text-left p-2">Prueba Técnica</th>
-                  <th className="text-left p-2">Nota Talento Humano</th>
-                  <th className="text-left p-2">Nota Jefe Inmediato</th>
-                  <th className="text-left p-2">Etapa</th>
+                  <th className="text-left p-2">Nota RRHH</th>
+                  <th className="text-left p-2">Nota Jefe</th>
                   <th className="text-left p-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {postulantes
-                    .filter((postulante) => postulante.etapa !== "Publicado") // Filtra solo las requisiciones en revisión
-                    .map((postulante) => (
-                      <tr key={postulante.id} className="border-b">
-                      <td className="p-2">{postulante.id}</td>
-                      <td className="p-2">{postulante.requisicionId}</td>
-                      <td className="p-2">{postulante.nombre}</td>
-                      <td className="p-2">{postulante.puntajeP1}</td>
-                      <td className="p-2">{postulante.puntajeP2}</td>
-                      <td className="p-2">{postulante.puntajeP3}</td>
-                      <td className="p-2">{postulante.puntajeP4}</td>
-                      <td className="p-2">{postulante.etapa}</td>
-                      <Button>Aceptar</Button>
-                    </tr>
-                    ))}
-                </tbody>
+                {misPostulaciones.map((postulacion) => (
+                  <tr key={postulacion.id} className="border-b">
+                    <td className="p-2">{postulacion.cargo}</td>
+                    <td className="p-2">{postulacion.area}</td>
+                    <td className="p-2">{postulacion.etapa}</td>
+                    <td className="p-2">{postulacion.puntajeP1}</td>
+                    <td className="p-2">{postulacion.puntajeP2}</td>
+                    <td className="p-2">{postulacion.puntajeP3}</td>
+                    <td className="p-2">{postulacion.puntajeP4}</td>
+                    <td className="p-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => verDetalles(postulacion.requisicionId)}
+                      >
+                        Ver Detalles
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={showDetalleDialog} onOpenChange={setShowDetalleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Detalles de la Posición</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold">Cargo</h3>
+              <p>{selectedRequisicion?.cargo}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Área</h3>
+              <p>{selectedRequisicion?.area}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Funciones</h3>
+              <p>{selectedRequisicion?.funciones}</p>
+            </div>
+            <div>
+              <h3 className="font-semibold">Salario</h3>
+              <p>{selectedRequisicion?.salario}</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

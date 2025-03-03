@@ -183,6 +183,34 @@
               "isRequired": false,
               "attributes": []
             },
+            "email": {
+              "name": "email",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "telefono": {
+              "name": "telefono",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "cvUrl": {
+              "name": "cvUrl",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "experiencia": {
+              "name": "experiencia",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "etapa": {
               "name": "etapa",
               "isArray": false,
@@ -221,7 +249,7 @@
             "requisicionId": {
               "name": "requisicionId",
               "isArray": false,
-              "type": "ID",
+              "type": "String",
               "isRequired": false,
               "attributes": []
             },
