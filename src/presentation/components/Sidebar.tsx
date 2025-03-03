@@ -49,12 +49,18 @@ const Sidebar = () => {
       { icon: LayoutDashboard, name: "Inicio", href: "/" },
       { icon: Users, name: "Revisión Solicitudes", href: "/rrhh/solicitudes" },
       { icon: FileText, name: "Publicación Oferta", href: "/rrhh/publicacion" },
-      { icon: FileText, name: "Candidatos", href: "/rrhh/candidatos" },
+      { icon: ClipboardList, name: "Candidatos", href: "/rrhh/candidatos" },
     ];
   } else if (userGroup === "calificadores") {
     menuItems = [
       { icon: LayoutDashboard, name: "Inicio", href: "/" },
       { icon: ClipboardList, name: "Calificacion", href: "/calificacion" },
+    ];
+  } else if (userGroup === "postulantes") {
+    menuItems = [
+      { icon: LayoutDashboard, name: "Inicio", href: "/" },
+      { icon: ClipboardList, name: "Portal", href: "/postulantes/portal" },
+      { icon: FileText, name: "Ofertas", href: "/postulantes/ofertas" },
     ];
   }
 
