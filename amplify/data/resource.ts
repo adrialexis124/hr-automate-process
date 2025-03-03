@@ -32,6 +32,7 @@ const schema = a.schema({
       puntajeP2: a.string(),
       puntajeP3: a.string(),
       puntajeP4: a.string(),
+      requisicionId: a.string(),
       requisicion: a.belongsTo('Requisicion', 'requisicionId'),
     })
     .authorization((allow) => [allow.publicApiKey()])
