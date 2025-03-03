@@ -78,17 +78,27 @@ export default function Requisiciones() {
     }
   };
 
-  const updateEtapa = async (id: string, nuevoEtapa: string) => {
+  const updateEtapa = async (postulante: Schema["Postulante"]["type"]) => {
     try {
+      // Actualizar el postulante a Completado
       const updatedPostulante = await client.models.Postulante.update({
-        id,
-        etapa: nuevoEtapa
+        id: postulante.id,
+        etapa: "Completado"
       });
+
+      // Actualizar la requisición con el email del postulante aprobado
+      if (postulante.requisicionId && postulante.email) {
+        await client.models.Requisicion.update({
+          id: postulante.requisicionId,
+          emailAprobado: postulante.email,
+          etapa: "Aprobado"
+        });
+      }
   
       // Actualiza el estado local para reflejar el cambio en la UI
-      setRequisiciones((prev) =>
-        prev.map((req) =>
-          req.id === id ? { ...req, estado: nuevoEtapa } : req
+      setPostulantes((prev) =>
+        prev.map((p) =>
+          p.id === postulante.id ? { ...p, etapa: "Completado" } : p
         )
       );
   
@@ -121,6 +131,7 @@ export default function Requisiciones() {
                   <th className="text-left p-2">ID</th>
                   <th className="text-left p-2">RequisicionID</th>
                   <th className="text-left p-2">Nombre</th>
+                  <th className="text-left p-2">Email</th>
                   <th className="text-left p-2">Prueba Psicotécnia</th>
                   <th className="text-left p-2">Prueba Técnica</th>
                   <th className="text-left p-2">Nota Talento Humano</th>
@@ -131,21 +142,27 @@ export default function Requisiciones() {
               </thead>
               <tbody>
                 {postulantes
-                    .filter((postulante) => postulante.etapa === "Aprobado") // Filtra solo las requisiciones en revisión
+                    .filter((postulante) => postulante.etapa === "Aprobado")
                     .map((postulante) => (
                       <tr key={postulante.id} className="border-b">
                       <td className="p-2">{postulante.id}</td>
                       <td className="p-2">{postulante.requisicionId}</td>
                       <td className="p-2">{postulante.nombre}</td>
+                      <td className="p-2">{postulante.email}</td>
                       <td className="p-2">{postulante.puntajeP1}</td>
                       <td className="p-2">{postulante.puntajeP2}</td>
                       <td className="p-2">{postulante.puntajeP3}</td>
                       <td className="p-2">{postulante.puntajeP4}</td>
                       <td className="p-2">{postulante.etapa}</td>
                       <td className="p-2">                        
-                        <Button variant="outline" size="sm" onClick={() => updateEtapa(postulante.id, "Contratacion")}>
-                            Contratar
-                        </Button></td>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => updateEtapa(postulante)}
+                        >
+                          Contratar
+                        </Button>
+                      </td>
                     </tr>
                     ))}
                 </tbody>

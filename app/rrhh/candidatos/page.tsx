@@ -143,13 +143,13 @@ export default function Requisiciones() {
                       <td className="p-2">
                       <td className="p-2">
                       <td className="p-2">
-                        <Button
+                        {/* <Button
                             variant="outline"
                             size="sm"
                             onClick={() => createPostulante(requisicion.id)}
                         >
                             Crear Candidato
-                        </Button>
+                        </Button> */}
                         </td>
                       </td>
                       </td>

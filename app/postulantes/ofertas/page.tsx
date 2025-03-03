@@ -19,7 +19,7 @@ const client = generateClient<Schema>();
 
 export default function MisOfertas() {
   const { user } = useAuthenticator();
-  const [misPostulaciones, setMisPostulaciones] = useState<Array<Schema["Postulante"]["type"] & { cargo?: string, area?: string, funciones?: string }>>([]);
+  const [misPostulaciones, setMisPostulaciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
   const [showDetalleDialog, setShowDetalleDialog] = useState(false);
   const [selectedRequisicion, setSelectedRequisicion] = useState<Schema["Requisicion"]["type"] | null>(null);
 
@@ -29,13 +29,10 @@ export default function MisOfertas() {
     async function getUserEmail() {
       setUserEmail("");
       try {
-        const { tokens } = await fetchAuthSession(); // Obtiene la sesión de autenticación
+        const { tokens } = await fetchAuthSession();
         if (tokens?.idToken) {
-          const payloadBase64 = tokens.idToken.toString().split(".")[1]; // Extrae la parte del payload (JWT)
-          const decodedPayload = JSON.parse(atob(payloadBase64)); // Decodifica el JWT
-
-          console.log("Payload del token:", decodedPayload); // 👀 Verifica qué datos tiene el token
-
+          const payloadBase64 = tokens.idToken.toString().split(".")[1];
+          const decodedPayload = JSON.parse(atob(payloadBase64));
           setUserEmail(decodedPayload.email);
         }
       } catch (error) {
@@ -46,59 +43,55 @@ export default function MisOfertas() {
     getUserEmail();
   }, []);
 
-
   async function listMisPostulaciones() {
-    if (!user?.username) return;
+    if (!userEmail) return;
 
     try {
-      // Obtener las postulaciones del usuario actual por su email y que estén aprobadas
-      const postulaciones = await client.models.Postulante.observeQuery({
+      // Obtener las requisiciones donde el usuario fue aprobado
+      const requisiciones = await client.models.Requisicion.observeQuery({
         filter: {
-          and: [
-            { etapa: { eq: "Aprobado" } }
-          ]
+          emailAprobado: { eq: userEmail }
         }
       }).subscribe({
-        next: async (data) => {
-          // Para cada postulación, obtener los detalles de la requisición
-          const postulacionesConDetalles = await Promise.all(
-            data.items.map(async (postulacion) => {
-              if (!postulacion.requisicionId) return postulacion;
-              const requisicion = await client.models.Requisicion.get({ id: postulacion.requisicionId });
-              return {
-                ...postulacion,
-                cargo: requisicion?.data?.cargo || 'No especificado',
-                area: requisicion?.data?.area || 'No especificado',
-                funciones: requisicion?.data?.funciones || 'No especificado'
-              };
-            })
-          );
-
-          setMisPostulaciones(postulacionesConDetalles);
-          console.log(postulacionesConDetalles);
+        next: (data) => {
+          setMisPostulaciones(data.items);
+          console.log("Requisiciones donde fui aprobado:", data.items);
         }
       });
     } catch (error) {
-      console.error("Error al obtener postulaciones:", error);
+      console.error("Error al obtener requisiciones:", error);
     }
   }
 
   useEffect(() => {
-    if (user?.username) {
+    if (userEmail) {
       listMisPostulaciones();
     }
-  }, [user]);
+  }, [userEmail]);
 
-  const verDetalles = async (requisicionId: string | null | undefined) => {
-    if (!requisicionId) return;
+  const verDetalles = async (requisicion: Schema["Requisicion"]["type"]) => {
+    setSelectedRequisicion(requisicion);
+    setShowDetalleDialog(true);
+  };
+
+  const aceptarOferta = async (requisicion: Schema["Requisicion"]["type"]) => {
     try {
-      const requisicion = await client.models.Requisicion.get({ id: requisicionId });
-      if (requisicion?.data) {
-        setSelectedRequisicion(requisicion.data);
-        setShowDetalleDialog(true);
-      }
+      await client.models.Requisicion.update({
+        id: requisicion.id,
+        etapa: "Contratado"
+      });
+      
+      // Actualizar la lista local
+      setMisPostulaciones(prev => 
+        prev.map(req => 
+          req.id === requisicion.id 
+            ? { ...req, etapa: "Contratado" } 
+            : req
+        )
+      );
     } catch (error) {
-      console.error("Error al obtener detalles de la requisición:", error);
+      console.error("Error al aceptar la oferta:", error);
+      alert("Error al aceptar la oferta");
     }
   };
 
@@ -110,12 +103,12 @@ export default function MisOfertas() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        Mis Postulaciones Aprobadas
+        Mis Posiciones Aprobadas
       </motion.h1>
 
       <Card>
         <CardHeader>
-          <CardTitle>Estado de mis postulaciones aprobadas</CardTitle>
+          <CardTitle>Posiciones donde fui aprobado</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -124,32 +117,37 @@ export default function MisOfertas() {
                 <tr className="border-b">
                   <th className="text-left p-2">Cargo</th>
                   <th className="text-left p-2">Área</th>
+                  <th className="text-left p-2">Jefe Inmediato</th>
                   <th className="text-left p-2">Estado</th>
-                  <th className="text-left p-2">Prueba Psicotécnica</th>
-                  <th className="text-left p-2">Prueba Técnica</th>
-                  <th className="text-left p-2">Nota RRHH</th>
-                  <th className="text-left p-2">Nota Jefe</th>
                   <th className="text-left p-2">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {misPostulaciones.map((postulacion) => (
-                  <tr key={postulacion.id} className="border-b">
-                    <td className="p-2">{postulacion.cargo}</td>
-                    <td className="p-2">{postulacion.area}</td>
-                    <td className="p-2">{postulacion.etapa}</td>
-                    <td className="p-2">{postulacion.puntajeP1}</td>
-                    <td className="p-2">{postulacion.puntajeP2}</td>
-                    <td className="p-2">{postulacion.puntajeP3}</td>
-                    <td className="p-2">{postulacion.puntajeP4}</td>
+                {misPostulaciones.map((requisicion) => (
+                  <tr key={requisicion.id} className="border-b">
+                    <td className="p-2">{requisicion.cargo}</td>
+                    <td className="p-2">{requisicion.area}</td>
+                    <td className="p-2">{requisicion.jefeInmediato}</td>
+                    <td className="p-2">{requisicion.etapa}</td>
                     <td className="p-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => verDetalles(postulacion.requisicionId)}
-                      >
-                        Ver Detalles
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => verDetalles(requisicion)}
+                        >
+                          Ver Detalles
+                        </Button>
+                        {requisicion.etapa === "Aprobado" && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => aceptarOferta(requisicion)}
+                          >
+                            Aceptar Oferta
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

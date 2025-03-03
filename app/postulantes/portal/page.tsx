@@ -234,7 +234,7 @@ export default function Requisiciones() {
           </div>
         </CardContent>
       </Card>
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitle>Candidatos</CardTitle>
         </CardHeader>
@@ -340,7 +340,7 @@ export default function Requisiciones() {
             </div>
           </form>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
     </div>
   )
 }

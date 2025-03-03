@@ -170,7 +170,6 @@ export default function Requisiciones() {
       if (todosAprobados && selectedPostulante.requisicionId && selectedPostulante.email) {
         await client.models.Requisicion.update({
           id: selectedPostulante.requisicionId,
-          emailAprobado: selectedPostulante.email,
           etapa: "Aprobado"
         });
       }

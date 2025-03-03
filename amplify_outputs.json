@@ -102,6 +102,13 @@
               "isRequired": false,
               "attributes": []
             },
+            "emailAprobado": {
+              "name": "emailAprobado",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
             "postulantes": {
               "name": "postulantes",
               "isArray": true,
