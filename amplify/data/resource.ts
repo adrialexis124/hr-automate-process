@@ -23,12 +23,15 @@ const schema = a.schema({
   Postulante: a
     .model({
       nombre: a.string(),
+      email: a.string(),
+      telefono: a.string(),
+      cvUrl: a.string(),
+      experiencia: a.string(),
       etapa: a.string(),
       puntajeP1: a.string(),
       puntajeP2: a.string(),
       puntajeP3: a.string(),
       puntajeP4: a.string(),
-      requisicionId: a.id(),
       requisicion: a.belongsTo('Requisicion', 'requisicionId'),
     })
     .authorization((allow) => [allow.publicApiKey()])

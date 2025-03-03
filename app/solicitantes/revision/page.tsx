@@ -18,6 +18,10 @@ const client = generateClient<Schema>();
 
 export default function Requisiciones() {
   const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
+  
+  // Agregar estado para el modo de edición y la requisición seleccionada
+  const [editMode, setEditMode] = useState(false);
+  const [selectedRequisicion, setSelectedRequisicion] = useState<Schema["Requisicion"]["type"] | null>(null);
 
   const [cargo, setCargo] = useState("");
   const [jefeInmediato, setJefeInmediato] = useState("");
@@ -43,8 +47,8 @@ export default function Requisiciones() {
   }, []);
 
   const createRequisicion = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evitar recarga de la página
-  
+    e.preventDefault();
+
     try {
       const newRequisicion = await client.models.Requisicion.create({
         cargo,
@@ -52,12 +56,12 @@ export default function Requisiciones() {
         area,
         funciones,
         salario,
-        estado,
-        etapa
+        estado: "Pendiente",
+        etapa: "En Revisión 1"
       });
-  
+
       console.log("Requisición creada:", newRequisicion);
-  
+
       // Limpiar el formulario después de enviar
       setCargo("");
       setJefeInmediato("");
@@ -66,7 +70,7 @@ export default function Requisiciones() {
       setSalario("");
       setEstado("");
       setEtapa("");
-  
+
     } catch (error) {
       console.error("Error al guardar la requisición:", error);
     }
@@ -88,6 +92,52 @@ export default function Requisiciones() {
     }
   };
 
+  const handleEdit = (requisicion: Schema["Requisicion"]["type"]) => {
+    setSelectedRequisicion(requisicion);
+    setCargo(requisicion.cargo ?? "");
+    setJefeInmediato(requisicion.jefeInmediato ?? "");
+    setArea(requisicion.area ?? "TICS");
+    setFunciones(requisicion.funciones ?? "");
+    setSalario(requisicion.salario ?? "");
+    setEstado(requisicion.estado ?? "Pendiente");
+    setEtapa(requisicion.etapa ?? "En Revisión");
+    setEditMode(true);
+  };
+
+  const updateRequisicion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedRequisicion) return;
+
+    try {
+      const updatedRequisicion = await client.models.Requisicion.update({
+        id: selectedRequisicion.id,
+        cargo,
+        jefeInmediato,
+        area,
+        funciones,
+        salario,
+        estado: "Pendiente",
+        etapa: "En Revisión 1"
+      });
+
+      console.log("Requisición actualizada:", updatedRequisicion);
+      
+      // Limpiar el formulario y salir del modo de edición
+      setEditMode(false);
+      setSelectedRequisicion(null);
+      setCargo("");
+      setJefeInmediato("");
+      setArea("");
+      setFunciones("");
+      setSalario("");
+      setEstado("");
+      setEtapa("");
+    } catch (error) {
+      console.error("Error al actualizar la requisición:", error);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <motion.h1
@@ -99,7 +149,68 @@ export default function Requisiciones() {
         Revisión de Solicitudes
       </motion.h1>
 
-
+      {editMode && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Editar Requisición</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={updateRequisicion} className="space-y-4">
+              <div>
+                <Label htmlFor="cargo">Cargo</Label>
+                <Input
+                  id="cargo"
+                  value={cargo}
+                  onChange={(e) => setCargo(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="jefeInmediato">Jefe Inmediato</Label>
+                <Input
+                  id="jefeInmediato"
+                  value={jefeInmediato}
+                  onChange={(e) => setJefeInmediato(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="area">Área</Label>
+                <Select value={area} onValueChange={setArea}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un área" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="TICS">TICS</SelectItem>
+                    <SelectItem value="RRHH">RRHH</SelectItem>
+                    <SelectItem value="Finanzas">Finanzas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="funciones">Funciones</Label>
+                <Textarea
+                  id="funciones"
+                  value={funciones}
+                  onChange={(e) => setFunciones(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="salario">Salario</Label>
+                <Input
+                  id="salario"
+                  value={salario}
+                  onChange={(e) => setSalario(e.target.value)}
+                />
+              </div>
+              <div className="flex space-x-2">
+                <Button type="submit">Guardar Cambios</Button>
+                <Button type="button" variant="outline" onClick={() => setEditMode(false)}>
+                  Cancelar
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -122,8 +233,10 @@ export default function Requisiciones() {
               </thead>
               <tbody>
                 {requisiciones
-                    .filter((requisicion) => requisicion.etapa === "Necesita Cambios") // Filtra solo las requisiciones en revisión
-                    .map((requisicion) => (
+                  .filter((requisicion) => 
+                    requisicion.estado === "Cambios" || requisicion.etapa === "Necesita Cambios"
+                  )
+                  .map((requisicion) => (
                     <tr key={requisicion.id} className="border-b">
                         <td className="p-2">{requisicion.id}</td>
                         <td className="p-2">{requisicion.jefeInmediato}</td>
@@ -134,11 +247,11 @@ export default function Requisiciones() {
                         <td className="p-2">{requisicion.estado}</td>
                         <td className="p-2">
                         <Button 
-                            onClick={() => updateEstado(requisicion.id)}>
+                            onClick={() => handleEdit(requisicion)}>
                                 Editar
                         </Button></td>
                     </tr>
-                    ))}
+                  ))}
                 </tbody>
             </table>
           </div>

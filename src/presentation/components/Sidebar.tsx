@@ -19,17 +19,17 @@ const Sidebar = () => {
       try {
         const session = await fetchAuthSession();
         const idToken = session.tokens?.idToken?.payload;
-  
+
         const groups = idToken?.["cognito:groups"];
         const group = Array.isArray(groups) ? String(groups[0]) : null; // Convertir a string
-  
+
         console.log("Grupo del usuario:", group);
         setUserGroup(group);
       } catch (error) {
         console.error("Error obteniendo el grupo del usuario:", error);
       }
     }
-  
+
     fetchUserGroup();
   }, []);
 
@@ -84,9 +84,8 @@ const Sidebar = () => {
           {menuItems.map((item) => (
             <Link key={item.name} href={item.href}>
               <motion.div
-                className={`flex items-center px-4 py-3 ${
-                  pathname === item.href ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground"
-                } transition-colors duration-200`}
+                className={`flex items-center px-4 py-3 ${pathname === item.href ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground"
+                  } transition-colors duration-200`}
                 whileHover={{ x: 5 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -96,7 +95,11 @@ const Sidebar = () => {
             </Link>
           ))}
           <br />
-          <button onClick={signOut}>Sign out</button>
+          <div className="flex justify-center">
+            <button onClick={signOut} className="p-2 bg-primary text-primary-foreground"
+            >
+              Cerrar sesión</button>
+          </div>
         </nav>
       </motion.div>
     </>

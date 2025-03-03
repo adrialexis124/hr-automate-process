@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/src/presentation/com
 import { Button } from "@/src/presentation/components/ui/button"
 import { Input } from "@/src/presentation/components/ui/input"
 import { Label } from "@/src/presentation/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/src/presentation/components/ui/dialog"
 import { Textarea } from "@/src/presentation/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/presentation/components/ui/select"
 
@@ -27,6 +28,14 @@ export default function Requisiciones() {
   const [puntajeP3, setPuntajeP3] = useState("Pendiente");
   const [puntajeP4, setPuntajeP4] = useState("Pendiente");
 
+  const [showPostularDialog, setShowPostularDialog] = useState(false);
+  const [selectedRequisicionId, setSelectedRequisicionId] = useState<string | null>(null);
+  
+  const [postulanteName, setPostulanteName] = useState("");
+  const [postulanteEmail, setPostulanteEmail] = useState("");
+  const [postulanteTelefono, setPostulanteTelefono] = useState("");
+  const [postulanteExperiencia, setPostulanteExperiencia] = useState("");
+  const [cvFile, setCvFile] = useState<File | null>(null);
 
   function listRequisiciones() {
     client.models.Requisicion.observeQuery().subscribe({
@@ -58,24 +67,51 @@ export default function Requisiciones() {
     listPostulantes();
   }, []);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setCvFile(e.target.files[0]);
+    }
+  };
+
   const createPostulante = async (requisicionId: string) => {
-  
+    if (!cvFile) {
+      alert("Por favor, seleccione un CV");
+      return;
+    }
+
     try {
+      const cvUrl = "temp_url";
+
       const newPostulante = await client.models.Postulante.create({
         requisicionId,
-        nombre: window.prompt("Nombre postulante"),
-        etapa,
-        puntajeP1,
-        puntajeP2,
-        puntajeP3,
-        puntajeP4,
+        nombre: postulanteName,
+        email: postulanteEmail,
+        telefono: postulanteTelefono,
+        experiencia: postulanteExperiencia,
+        cvUrl,
+        etapa: "Postulado",
+        puntajeP1: "Pendiente",
+        puntajeP2: "Pendiente",
+        puntajeP3: "Pendiente",
+        puntajeP4: "Pendiente",
       });
-  
-      console.log("Postulante creada:", newPostulante);
-  
+
+      console.log("Postulante creado:", newPostulante);
+      setShowPostularDialog(false);
+      limpiarFormulario();
     } catch (error) {
-      console.error("Error al guardar la requisición:", error);
+      console.error("Error al crear el postulante:", error);
+      alert("Error al enviar la postulación");
     }
+  };
+
+  const limpiarFormulario = () => {
+    setPostulanteName("");
+    setPostulanteEmail("");
+    setPostulanteTelefono("");
+    setPostulanteExperiencia("");
+    setCvFile(null);
+    setSelectedRequisicionId(null);
   };
 
   const updateEtapa = async (id: string, nuevoEtapa: string) => {
@@ -141,17 +177,16 @@ export default function Requisiciones() {
                       <td className="p-2">{requisicion.funciones}</td>
                       <td className="p-2">{requisicion.estado}</td>
                       <td className="p-2">
-                      <td className="p-2">
-                      <td className="p-2">
                         <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => createPostulante(requisicion.id)}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedRequisicionId(requisicion.id);
+                            setShowPostularDialog(true);
+                          }}
                         >
-                            Aplicar Posición
+                          Aplicar Posición
                         </Button>
-                        </td>
-                      </td>
                       </td>
                     </tr>
                     ))}
@@ -199,6 +234,74 @@ export default function Requisiciones() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={showPostularDialog} onOpenChange={setShowPostularDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Postular a la posición</DialogTitle>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={(e) => {
+            e.preventDefault();
+            if (selectedRequisicionId) createPostulante(selectedRequisicionId);
+          }}>
+            <div>
+              <Label htmlFor="nombre">Nombre completo</Label>
+              <Input
+                id="nombre"
+                value={postulanteName}
+                onChange={(e) => setPostulanteName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input
+                id="email"
+                type="email"
+                value={postulanteEmail}
+                onChange={(e) => setPostulanteEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="telefono">Teléfono</Label>
+              <Input
+                id="telefono"
+                value={postulanteTelefono}
+                onChange={(e) => setPostulanteTelefono(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="experiencia">Experiencia relevante</Label>
+              <Textarea
+                id="experiencia"
+                value={postulanteExperiencia}
+                onChange={(e) => setPostulanteExperiencia(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="cv">CV (PDF)</Label>
+              <Input
+                id="cv"
+                type="file"
+                accept=".pdf"
+                onChange={handleFileChange}
+                required
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button type="button" variant="outline" onClick={() => setShowPostularDialog(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit">
+                Enviar postulación
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

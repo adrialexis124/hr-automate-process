@@ -12,6 +12,19 @@ body {
   }
 }
 
+[data-amplify-authenticator] {
+  --amplify-components-authenticator-router-box-shadow: 0 0 16px var(--amplify-colors-overlay-10);
+  --amplify-components-authenticator-router-border-width: 0;
+  --amplify-components-authenticator-form-padding: var(--amplify-space-medium) var(--amplify-space-xl) var(--amplify-space-xl);
+  --amplify-components-button-primary-background-color: var(--amplify-colors-neutral-100);
+  --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 2px var(--amplify-colors-purple-60);
+  --amplify-components-tabs-item-active-border-color: var(--amplify-colors-neutral-100);
+  --amplify-components-tabs-item-color: var(--amplify-colors-neutral-80);
+  --amplify-components-tabs-item-active-color: var(--amplify-colors-purple-100);
+  --amplify-components-button-link-color: var(--amplify-colors-purple-80);
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -48,6 +61,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -88,6 +102,7 @@ body {
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
