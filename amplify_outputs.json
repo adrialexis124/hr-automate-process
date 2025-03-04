@@ -14,6 +14,7 @@
     "user_verification_types": [
       "email"
     ],
+    "groups": [],
     "mfa_configuration": "NONE",
     "password_policy": {
       "min_length": 8,
@@ -104,6 +105,13 @@
             },
             "emailAprobado": {
               "name": "emailAprobado",
+              "isArray": false,
+              "type": "String",
+              "isRequired": false,
+              "attributes": []
+            },
+            "telefono": {
+              "name": "telefono",
               "isArray": false,
               "type": "String",
               "isRequired": false,
@@ -328,5 +336,5 @@
       "nonModels": {}
     }
   },
-  "version": "1.1"
+  "version": "1.3"
 }

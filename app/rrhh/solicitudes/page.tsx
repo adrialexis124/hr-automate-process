@@ -12,7 +12,6 @@ import { toast } from "sonner"
 
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
-import { post } from 'aws-amplify/api';
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
 
@@ -46,33 +45,45 @@ export default function Requisiciones() {
     listRequisiciones();
   }, []);
 
-  const sendRejectionNotification = async (requisicion: Schema["Requisicion"]["type"]) => {
+  const sendRejectionEmail = async (requisicion: Schema["Requisicion"]["type"]) => {
     try {
-      const message = `
-Requisición Rechazada
+      if (!requisicion.jefeInmediato) {
+        throw new Error('Email del jefe inmediato no disponible');
+      }
 
-Cargo: ${requisicion.cargo}
-Área: ${requisicion.area}
-Estado: Rechazado
-
-Por favor, revise el sistema para más detalles.`;
-
-      await post({
-        apiName: 'EmailAPI',
-        path: '/send-email',
-        options: {
-          body: JSON.stringify({
-            phoneNumber: requisicion.telefono || '+593XXXXXXXXX', // Número de teléfono del jefe inmediato
-            subject: 'Requisición Rechazada',
-            message: message
-          })
-        }
+      const emailContent = `
+        <h2>Requisición Rechazada</h2>
+        <p>La requisición para el siguiente cargo ha sido rechazada:</p>
+        <ul>
+          <li><strong>Cargo:</strong> ${requisicion.cargo || 'No especificado'}</li>
+          <li><strong>Área:</strong> ${requisicion.area || 'No especificada'}</li>
+          <li><strong>Estado:</strong> Rechazado</li>
+        </ul>
+        <p>Por favor, revise el sistema para más detalles.</p>
+        <br>
+        <p>Saludos cordiales,<br>Departamento de RRHH</p>
+      `;
+      console.log(requisicion.jefeInmediato);
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: requisicion.jefeInmediato,
+          subject: `Requisición Rechazada - ${requisicion.cargo || 'Sin cargo especificado'}`,
+          html: emailContent
+        }),
       });
+      console.log(response);
+      if (!response.ok) {
+        throw new Error('Error al enviar el email');
+      }
 
-      toast.success('Notificación SMS enviada exitosamente');
+      toast.success('Notificación enviada exitosamente');
     } catch (error) {
-      console.error('Error al enviar SMS:', error);
-      toast.error('Error al enviar la notificación SMS');
+      console.error('Error al enviar notificación:', error);
+      toast.error(error instanceof Error ? error.message : 'Error al enviar la notificación');
     }
   };
 
@@ -84,27 +95,27 @@ Por favor, revise el sistema para más detalles.`;
         Negado: "Finalizado",
         Cambios: "Necesita Cambios",
       };
-  
+
       const nuevoEtapa = estadoToEtapa[nuevoEstado] || "Desconocido";
-  
+
       const updatedRequisicion = await client.models.Requisicion.update({
         id,
         estado: nuevoEstado,
         etapa: nuevoEtapa,
       });
-  
-      // Si la requisición fue rechazada, enviar SMS
-      if (nuevoEstado === "Negado") {
-        await sendRejectionNotification(updatedRequisicion);
+
+      // Si la requisición fue rechazada, enviar email
+      if (nuevoEstado === "Negado" && updatedRequisicion.data) {
+        await sendRejectionEmail(updatedRequisicion.data);
       }
-  
+
       // Actualiza la UI con el nuevo estado y etapa
       setRequisiciones((prev) =>
         prev.map((req) =>
           req.id === id ? { ...req, estado: nuevoEstado, etapa: nuevoEtapa } : req
         )
       );
-  
+
       toast.success(`Requisición ${nuevoEstado.toLowerCase()} exitosamente`);
     } catch (error) {
       console.error("Error al actualizar estado y etapa:", error);
@@ -146,45 +157,45 @@ Por favor, revise el sistema para más detalles.`;
               </thead>
               <tbody>
                 {requisiciones
-                    .filter((requisicion) => requisicion.etapa === "En Revisión 1")
-                    .map((requisicion) => (
+                  .filter((requisicion) => requisicion.etapa === "En Revisión 1")
+                  .map((requisicion) => (
                     <tr key={requisicion.id} className="border-b">
-                        <td className="p-2">{requisicion.id}</td>
-                        <td className="p-2">{requisicion.jefeInmediato}</td>
-                        <td className="p-2">{requisicion.cargo}</td>
-                        <td className="p-2">{requisicion.area}</td>
-                        <td className="p-2">{requisicion.etapa}</td>
-                        <td className="p-2">{requisicion.funciones}</td>
-                        <td className="p-2">{requisicion.estado}</td>
-                        <td className="p-2 space-x-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => updateEstado(requisicion.id, "Aprobado")}
-                            disabled={loading}
-                          >
-                            Aprobar
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            onClick={() => updateEstado(requisicion.id, "Cambios")}
-                            disabled={loading}
-                          >
-                            Cambios
-                          </Button>
-                          <Button 
-                            variant="destructive" 
-                            size="sm" 
-                            onClick={() => updateEstado(requisicion.id, "Negado")}
-                            disabled={loading}
-                          >
-                            Negar
-                          </Button>
-                        </td>
+                      <td className="p-2">{requisicion.id}</td>
+                      <td className="p-2">{requisicion.jefeInmediato}</td>
+                      <td className="p-2">{requisicion.cargo}</td>
+                      <td className="p-2">{requisicion.area}</td>
+                      <td className="p-2">{requisicion.etapa}</td>
+                      <td className="p-2">{requisicion.funciones}</td>
+                      <td className="p-2">{requisicion.estado}</td>
+                      <td className="p-2 space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateEstado(requisicion.id, "Aprobado")}
+                          disabled={loading}
+                        >
+                          Aprobar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => updateEstado(requisicion.id, "Cambios")}
+                          disabled={loading}
+                        >
+                          Cambios
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => updateEstado(requisicion.id, "Negado")}
+                          disabled={loading}
+                        >
+                          Negar
+                        </Button>
+                      </td>
                     </tr>
-                    ))}
-                </tbody>
+                  ))}
+              </tbody>
             </table>
           </div>
         </CardContent>

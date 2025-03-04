@@ -19,6 +19,8 @@ import outputs from "@/amplify_outputs.json";
 import { uploadData } from 'aws-amplify/storage';
 import { generateClient as apiClient } from 'aws-amplify/api';
 import { useAuthenticator } from "@aws-amplify/ui-react";
+import { sendEmailNotification } from "@/app/utils/notifications";
+import { toast } from "react-hot-toast";
 
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
@@ -122,6 +124,9 @@ export default function Requisiciones() {
     }
 
     try {
+      // Obtener la información de la requisición
+      const requisicion = await client.models.Requisicion.get({ id: requisicionId });
+
       const newPostulante = await client.models.Postulante.create({
         requisicionId,
         nombre: postulanteName,
@@ -136,12 +141,45 @@ export default function Requisiciones() {
         puntajeP4: "Pendiente",
       });
 
+      if (newPostulante.data) {
+        try {
+          console.log("Enviando correo al postulante");
+          console.log(userEmail);
+          // Enviar correo al postulante
+          const response =await sendEmailNotification({
+            to: userEmail,
+            subject: 'Postulación Recibida',
+            cargo: requisicion.data?.cargo || 'No especificado',
+            area: requisicion.data?.area || 'No especificada',
+            estado: 'En Revisión',
+            etapa: 'Postulación'
+          });
+          console.log(response);
+          // Enviar correo al jefe inmediato si está disponible
+          if (requisicion.data?.jefeInmediato) {
+            await sendEmailNotification({
+              to: requisicion.data.jefeInmediato,
+              subject: 'Nueva Postulación Recibida',
+              cargo: requisicion.data.cargo || 'No especificado',
+              area: requisicion.data.area || 'No especificada',
+              estado: 'En Revisión',
+              etapa: 'Postulación'
+            });
+          }
+
+          toast.success('Postulación enviada exitosamente');
+        } catch (error) {
+          console.error('Error al enviar notificaciones:', error);
+          toast.error('Error al enviar las notificaciones');
+        }
+      }
+
       console.log("Postulante creado:", newPostulante);
       setShowPostularDialog(false);
       limpiarFormulario();
     } catch (error) {
       console.error("Error al crear el postulante:", error);
-      alert("Error al enviar la postulación");
+      toast.error("Error al enviar la postulación");
     }
   };
 
@@ -234,7 +272,7 @@ export default function Requisiciones() {
           </div>
         </CardContent>
       </Card>
-      {/* <Card>
+      <Card>
         <CardHeader>
           <CardTitle>Candidatos</CardTitle>
         </CardHeader>
@@ -273,6 +311,7 @@ export default function Requisiciones() {
           </div>
         </CardContent>
       </Card>
+
 
       <Dialog open={showPostularDialog} onOpenChange={setShowPostularDialog}>
         <DialogContent className="sm:max-w-[425px]">
@@ -340,7 +379,7 @@ export default function Requisiciones() {
             </div>
           </form>
         </DialogContent>
-      </Dialog> */}
+      </Dialog>
     </div>
   )
 }

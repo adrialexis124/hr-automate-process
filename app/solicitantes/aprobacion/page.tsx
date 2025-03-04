@@ -8,11 +8,13 @@ import { Input } from "@/src/presentation/components/ui/input"
 import { Label } from "@/src/presentation/components/ui/label"
 import { Textarea } from "@/src/presentation/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/presentation/components/ui/select"
+import { toast } from "react-hot-toast"
 
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
+import { sendEmailNotification } from "@/app/utils/notifications";
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
@@ -88,11 +90,48 @@ export default function Requisiciones() {
 
       // Actualizar la requisición con el email del postulante aprobado
       if (postulante.requisicionId && postulante.email) {
-        await client.models.Requisicion.update({
+        const updatedRequisicion = await client.models.Requisicion.update({
           id: postulante.requisicionId,
           emailAprobado: postulante.email,
           etapa: "Aprobado"
         });
+
+        if (updatedRequisicion.data && postulante.email) {
+          // Notificar al postulante aprobado
+          try {
+            await sendEmailNotification({
+              to: postulante.email,
+              subject: '¡Felicitaciones! - Postulación Aprobada',
+              cargo: updatedRequisicion.data.cargo,
+              area: updatedRequisicion.data.area,
+              estado: 'Aprobado',
+              etapa: 'Contratación',
+              puntajes: {
+                puntajeP1: postulante.puntajeP1,
+                puntajeP2: postulante.puntajeP2,
+                puntajeP3: postulante.puntajeP3,
+                puntajeP4: postulante.puntajeP4
+              }
+            });
+
+            // Notificar al jefe inmediato
+            if (updatedRequisicion.data.jefeInmediato) {
+              await sendEmailNotification({
+                to: updatedRequisicion.data.jefeInmediato,
+                subject: 'Candidato Aprobado para Contratación',
+                cargo: updatedRequisicion.data.cargo,
+                area: updatedRequisicion.data.area,
+                estado: 'Aprobado',
+                etapa: 'Contratación'
+              });
+            }
+            
+            toast.success('Notificaciones enviadas exitosamente');
+          } catch (error) {
+            console.error('Error al enviar notificaciones:', error);
+            toast.error('Error al enviar las notificaciones');
+          }
+        }
       }
   
       // Actualiza el estado local para reflejar el cambio en la UI
@@ -102,9 +141,10 @@ export default function Requisiciones() {
         )
       );
   
-      console.log("Estado actualizado:", updatedPostulante);
+      toast.success("Postulante aprobado exitosamente");
     } catch (error) {
       console.error("Error al actualizar estado:", error);
+      toast.error("Error al aprobar el postulante");
     }
   };
 

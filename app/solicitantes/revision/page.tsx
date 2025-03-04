@@ -13,6 +13,8 @@ import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
+import { sendEmailNotification } from "@/app/utils/notifications";
+import { toast } from "react-hot-toast";
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
@@ -78,17 +80,40 @@ export default function Requisiciones() {
 
   const updateEstado = async (id: string) => {
     try {
-  
       const updatedRequisicion = await client.models.Requisicion.update({
         id,
         estado: "Pendiente",
-        etapa: "En Revisión 1", // Actualiza también la etapa
+        etapa: "En Revisión 1",
       });
-  
-  
-      console.log("Estado y etapa actualizados:", updatedRequisicion);
+
+      if (updatedRequisicion.data) {
+        try {
+          await sendEmailNotification({
+            to: updatedRequisicion.data.jefeInmediato || '',
+            subject: 'Requisición Actualizada',
+            cargo: updatedRequisicion.data.cargo,
+            area: updatedRequisicion.data.area,
+            estado: 'En Revisión',
+            etapa: 'En Revisión 1'
+          });
+          toast.success('Notificación enviada exitosamente');
+        } catch (error) {
+          console.error('Error al enviar notificación:', error);
+          toast.error('Error al enviar la notificación');
+        }
+      }
+
+      // Actualiza el estado local para reflejar el cambio en la UI
+      setRequisiciones((prev) =>
+        prev.map((req) =>
+          req.id === id ? { ...req, estado: "Pendiente", etapa: "En Revisión 1" } : req
+        )
+      );
+
+      console.log("Estado actualizado:", updatedRequisicion);
     } catch (error) {
-      console.error("Error al actualizar estado y etapa:", error);
+      console.error("Error al actualizar estado:", error);
+      toast.error("Error al actualizar la requisición");
     }
   };
 

@@ -9,11 +9,13 @@ import { Label } from "@/src/presentation/components/ui/label"
 import { Textarea } from "@/src/presentation/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/presentation/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/src/presentation/components/ui/dialog"
+import { toast } from "react-hot-toast"
 
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
+import { sendEmailNotification } from "../utils/notifications";
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
@@ -41,6 +43,8 @@ export default function Requisiciones() {
   // Agregar estado para el diálogo del PDF
   const [showPdfDialog, setShowPdfDialog] = useState(false);
   const [selectedPdfUrl, setSelectedPdfUrl] = useState<string | null>(null);
+
+  const [loading, setLoading] = useState(false);
 
   function listRequisiciones() {
     client.models.Requisicion.observeQuery().subscribe({
@@ -139,47 +143,77 @@ export default function Requisiciones() {
 
   const updatePostulante = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!selectedPostulante) return;
 
-    // Validar que todos los campos tengan valores válidos
-    const valores = Object.values(puntajes);
-    if (valores.some(v => v === "" || !validatePuntaje(v))) {
-      alert("Todos los campos deben tener valores entre 0 y 20");
-      return;
-    }
-
-    const puntajesNumericos = {
-      puntajeP1: Number(puntajes.puntajeP1),
-      puntajeP2: Number(puntajes.puntajeP2),
-      puntajeP3: Number(puntajes.puntajeP3),
-      puntajeP4: Number(puntajes.puntajeP4)
-    };
-
-    // Verificar si todos los puntajes son >= 14
-    const todosAprobados = Object.values(puntajesNumericos).every(p => p >= 14);
-
     try {
+      setLoading(true);
+
+      // Validar todos los puntajes
+      const valores = Object.values(puntajes);
+      if (valores.some(v => v === "" || !validatePuntaje(v))) {
+        alert("Todos los campos deben tener valores entre 0 y 20");
+        return;
+      }
+  
+      const puntajesNumericos = {
+        puntajeP1: Number(puntajes.puntajeP1),
+        puntajeP2: Number(puntajes.puntajeP2),
+        puntajeP3: Number(puntajes.puntajeP3),
+        puntajeP4: Number(puntajes.puntajeP4)
+      };
+  
+      // Verificar si todos los puntajes son >= 14
+      const todosAprobados = Object.values(puntajesNumericos).every(p => p >= 14);
+      const nuevoEtapa = todosAprobados ? "Aprobado" : "En Revisión"
+  
       const updatedPostulante = await client.models.Postulante.update({
         id: selectedPostulante.id,
-        ...puntajes,
-        etapa: todosAprobados ? "Aprobado" : "En Revisión"
+        puntajeP1: puntajes.puntajeP1,
+        puntajeP2: puntajes.puntajeP2,
+        puntajeP3: puntajes.puntajeP3,
+        puntajeP4: puntajes.puntajeP4,
+        etapa: nuevoEtapa
       });
 
-      // Si el postulante fue aprobado, actualizar la requisición con su email
-      if (todosAprobados && selectedPostulante.requisicionId && selectedPostulante.email) {
-        await client.models.Requisicion.update({
-          id: selectedPostulante.requisicionId,
-          etapa: "Aprobado"
-        });
+      if (updatedPostulante.data && updatedPostulante.data.email) {
+        const requisicion = await client.models.Requisicion.get({ id: updatedPostulante.data.requisicionId });
+        
+        try {
+          await sendEmailNotification({
+            to: updatedPostulante.data.email,
+            subject: `Resultado de Evaluación - ${nuevoEtapa}`,
+            cargo: requisicion.data?.cargo || 'No especificado',
+            area: requisicion.data?.area || 'No especificada',
+            estado: nuevoEtapa,
+            etapa: 'Evaluación',
+            puntajes: {
+              puntajeP1: puntajes.puntajeP1,
+              puntajeP2: puntajes.puntajeP2,
+              puntajeP3: puntajes.puntajeP3,
+              puntajeP4: puntajes.puntajeP4
+            }
+          });
+          toast.success('Notificación enviada exitosamente');
+        } catch (error) {
+          console.error('Error al enviar notificación:', error);
+          toast.error('Error al enviar la notificación');
+        }
       }
 
-      console.log("Postulante actualizado:", updatedPostulante);
-      setShowCalificarDialog(false);
       setSelectedPostulante(null);
+      setPuntajes({
+        puntajeP1: "",
+        puntajeP2: "",
+        puntajeP3: "",
+        puntajeP4: ""
+      });
+      setShowCalificarDialog(false);
+      toast.success("Calificaciones guardadas exitosamente");
     } catch (error) {
-      console.error("Error al actualizar el postulante:", error);
-      alert("Error al guardar las calificaciones");
+      console.error("Error al actualizar calificaciones:", error);
+      toast.error("Error al guardar las calificaciones");
+    } finally {
+      setLoading(false);
     }
   };
 
