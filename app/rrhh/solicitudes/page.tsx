@@ -8,16 +8,20 @@ import { Input } from "@/src/presentation/components/ui/input"
 import { Label } from "@/src/presentation/components/ui/label"
 import { Textarea } from "@/src/presentation/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/src/presentation/components/ui/select"
+import { toast } from "sonner"
 
 import { Amplify } from "aws-amplify";
 import { generateClient } from "aws-amplify/data";
+import { post } from 'aws-amplify/api';
 import type { Schema } from "@/amplify/data/resource";
 import outputs from "@/amplify_outputs.json";
+
 Amplify.configure(outputs);
 const client = generateClient<Schema>();
 
 export default function Requisiciones() {
   const [requisiciones, setRequisiciones] = useState<Array<Schema["Requisicion"]["type"]>>([]);
+  const [loading, setLoading] = useState(false);
 
   const [cargo, setCargo] = useState("");
   const [jefeInmediato, setJefeInmediato] = useState("");
@@ -42,38 +46,45 @@ export default function Requisiciones() {
     listRequisiciones();
   }, []);
 
-  const createRequisicion = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evitar recarga de la página
-  
+  const sendRejectionEmail = async (requisicion: Schema["Requisicion"]["type"]) => {
     try {
-      const newRequisicion = await client.models.Requisicion.create({
-        cargo,
-        jefeInmediato,
-        area,
-        funciones,
-        salario,
-        estado,
-        etapa
+      await post({
+        apiName: 'EmailAPI',
+        path: '/send-email',
+        options: {
+          body: {
+            to: requisicion.jefeInmediato,
+            subject: `Requisición Rechazada - ${requisicion.cargo}`,
+            message: `
+Estimado/a ${requisicion.jefeInmediato},
+
+Le informamos que la requisición para el cargo "${requisicion.cargo}" ha sido rechazada por el departamento de RRHH.
+
+Detalles de la requisición:
+- Cargo: ${requisicion.cargo}
+- Área: ${requisicion.area}
+- Funciones: ${requisicion.funciones}
+- Salario: ${requisicion.salario}
+
+Si necesita más información o desea discutir los motivos del rechazo, por favor contacte al departamento de RRHH.
+
+Saludos cordiales,
+Departamento de Recursos Humanos
+            `
+          }
+        }
       });
-  
-      console.log("Requisición creada:", newRequisicion);
-  
-      // Limpiar el formulario después de enviar
-      setCargo("");
-      setJefeInmediato("");
-      setArea("");
-      setFunciones("");
-      setSalario("");
-      setEstado("");
-      setEtapa("");
-  
+
+      toast.success('Correo de notificación enviado exitosamente');
     } catch (error) {
-      console.error("Error al guardar la requisición:", error);
+      console.error('Error al enviar el correo:', error);
+      toast.error('Error al enviar la notificación por correo');
     }
   };
 
   const updateEstado = async (id: string, nuevoEstado: string) => {
     try {
+      setLoading(true);
       const estadoToEtapa: Record<string, string> = {
         Aprobado: "En Revisión 2",
         Negado: "Finalizado",
@@ -88,6 +99,11 @@ export default function Requisiciones() {
         etapa: nuevoEtapa,
       });
   
+      // Si la requisición fue rechazada, enviar correo
+      if (nuevoEstado === "Negado") {
+        await sendRejectionEmail(updatedRequisicion);
+      }
+  
       // Actualiza la UI con el nuevo estado y etapa
       setRequisiciones((prev) =>
         prev.map((req) =>
@@ -95,9 +111,12 @@ export default function Requisiciones() {
         )
       );
   
-      console.log("Estado y etapa actualizados:", updatedRequisicion);
+      toast.success(`Requisición ${nuevoEstado.toLowerCase()} exitosamente`);
     } catch (error) {
       console.error("Error al actualizar estado y etapa:", error);
+      toast.error("Error al actualizar la requisición");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -111,8 +130,6 @@ export default function Requisiciones() {
       >
         Revisión de Solicitudes
       </motion.h1>
-
-
 
       <Card>
         <CardHeader>
@@ -135,7 +152,7 @@ export default function Requisiciones() {
               </thead>
               <tbody>
                 {requisiciones
-                    .filter((requisicion) => requisicion.etapa === "En Revisión 1") // Filtra solo las requisiciones en revisión
+                    .filter((requisicion) => requisicion.etapa === "En Revisión 1")
                     .map((requisicion) => (
                     <tr key={requisicion.id} className="border-b">
                         <td className="p-2">{requisicion.id}</td>
@@ -145,16 +162,31 @@ export default function Requisiciones() {
                         <td className="p-2">{requisicion.etapa}</td>
                         <td className="p-2">{requisicion.funciones}</td>
                         <td className="p-2">{requisicion.estado}</td>
-                        <td className="p-2">
-                        <Button variant="outline" size="sm" onClick={() => updateEstado(requisicion.id, "Aprobado")}>
+                        <td className="p-2 space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => updateEstado(requisicion.id, "Aprobado")}
+                            disabled={loading}
+                          >
                             Aprobar
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => updateEstado(requisicion.id, "Cambios")}>
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => updateEstado(requisicion.id, "Cambios")}
+                            disabled={loading}
+                          >
                             Cambios
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => updateEstado(requisicion.id, "Negado")}>
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => updateEstado(requisicion.id, "Negado")}
+                            disabled={loading}
+                          >
                             Negar
-                        </Button>
+                          </Button>
                         </td>
                     </tr>
                     ))}
