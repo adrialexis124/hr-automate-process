@@ -46,39 +46,33 @@ export default function Requisiciones() {
     listRequisiciones();
   }, []);
 
-  const sendRejectionEmail = async (requisicion: Schema["Requisicion"]["type"]) => {
+  const sendRejectionNotification = async (requisicion: Schema["Requisicion"]["type"]) => {
     try {
+      const message = `
+Requisición Rechazada
+
+Cargo: ${requisicion.cargo}
+Área: ${requisicion.area}
+Estado: Rechazado
+
+Por favor, revise el sistema para más detalles.`;
+
       await post({
         apiName: 'EmailAPI',
         path: '/send-email',
         options: {
-          body: {
-            to: requisicion.jefeInmediato,
-            subject: `Requisición Rechazada - ${requisicion.cargo}`,
-            message: `
-Estimado/a ${requisicion.jefeInmediato},
-
-Le informamos que la requisición para el cargo "${requisicion.cargo}" ha sido rechazada por el departamento de RRHH.
-
-Detalles de la requisición:
-- Cargo: ${requisicion.cargo}
-- Área: ${requisicion.area}
-- Funciones: ${requisicion.funciones}
-- Salario: ${requisicion.salario}
-
-Si necesita más información o desea discutir los motivos del rechazo, por favor contacte al departamento de RRHH.
-
-Saludos cordiales,
-Departamento de Recursos Humanos
-            `
-          }
+          body: JSON.stringify({
+            phoneNumber: requisicion.telefono || '+593XXXXXXXXX', // Número de teléfono del jefe inmediato
+            subject: 'Requisición Rechazada',
+            message: message
+          })
         }
       });
 
-      toast.success('Correo de notificación enviado exitosamente');
+      toast.success('Notificación SMS enviada exitosamente');
     } catch (error) {
-      console.error('Error al enviar el correo:', error);
-      toast.error('Error al enviar la notificación por correo');
+      console.error('Error al enviar SMS:', error);
+      toast.error('Error al enviar la notificación SMS');
     }
   };
 
@@ -99,9 +93,9 @@ Departamento de Recursos Humanos
         etapa: nuevoEtapa,
       });
   
-      // Si la requisición fue rechazada, enviar correo
+      // Si la requisición fue rechazada, enviar SMS
       if (nuevoEstado === "Negado") {
-        await sendRejectionEmail(updatedRequisicion);
+        await sendRejectionNotification(updatedRequisicion);
       }
   
       // Actualiza la UI con el nuevo estado y etapa

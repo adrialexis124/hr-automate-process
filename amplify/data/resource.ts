@@ -18,6 +18,7 @@ const schema = a.schema({
       etapa: a.string(),
       detalle: a.string(),
       emailAprobado: a.string(),
+      telefono: a.string(),
       postulantes: a.hasMany('Postulante', 'requisicionId'),
     })
     .authorization((allow) => [allow.publicApiKey()]),
